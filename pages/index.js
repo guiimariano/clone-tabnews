@@ -1,5 +1,5 @@
 function Home() {
-  return <h1>Nova frase de efeito xD</h1>;
+  return <h1>Não desista dos seus sonhos, eu acredito em você!</h1>;
 }
 
 export default Home;
