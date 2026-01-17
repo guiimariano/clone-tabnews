@@ -403,8 +403,8 @@ function Home() {
         .profile-card img {
           width: 100%;
           display: block;
-          height: 280px;
-          object-fit: cover;
+          height: auto;
+          object-fit: contain;
         }
 
         .profile-caption {
