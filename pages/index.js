@@ -395,12 +395,16 @@ function Home() {
           overflow: hidden;
           border: 1px solid rgba(255, 255, 255, 0.08);
           background: rgba(255, 255, 255, 0.02);
+          max-width: 320px;
+          margin-left: auto;
+          margin-right: auto;
         }
 
         .profile-card img {
           width: 100%;
           display: block;
-          height: auto;
+          height: 280px;
+          object-fit: cover;
         }
 
         .profile-caption {
