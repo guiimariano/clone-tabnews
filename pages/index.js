@@ -15,9 +15,9 @@ const summary = {
   en: 'Frontend Engineer with 7+ years building Angular products for enterprise teams. At Avanade I drive micro frontend initiatives, evolve design systems, and accelerate squads through performance and accessibility audits. I partner with stakeholders to turn business metrics into intuitive journeys, mentor engineers on modern tooling, and rely on testing plus observability to ship reliable releases.',
 };
 
-const skills = ['Angular', 'TypeScript', 'JavaScript', 'NgRx', 'Jest', 'Git'];
+const skills = ['Angular', 'TypeScript', 'JavaScript', 'NgRx', 'Jest', 'Jasmine', 'Git', 'NextJs', 'CI/CD', 'Micro Frontends', 'Performance Optimization', 'Accessibility'];
 
-const certifications = ['Técnico em Informática'];
+const certifications = ['Técnico em Informática (ETESP)', 'Microsoft Certified: Conceitos básicos da IA do Azure', 'Análise e Desenvolvimento de Sistemas (IFSP)'];
 
 const experiences = [
   {
