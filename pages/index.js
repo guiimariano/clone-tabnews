@@ -95,11 +95,24 @@ const education = {
   period: '2014 – 2019',
 };
 
+const birthDate = new Date('1996-05-21T00:00:00');
+
+function getAge(date) {
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+  const monthDiff = today.getMonth() - date.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
 function Home() {
+  const age = getAge(birthDate);
   return (
     <>
       <Head>
-        <title>Currículo - Guilherme Mariano</title>
+        <title>Guilherme Mariano</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -109,9 +122,8 @@ function Home() {
       </Head>
       <main>
         <header className="hero">
-          <p className="eyebrow">Currículo Interativo</p>
           <h1>Guilherme Mariano</h1>
-          <h2>Engenheiro de Software · Frontend · Angular</h2>
+          <h2>Software Engineer · Senior Frontend Developer · Angular</h2>
           <p className="location">{contact.location}</p>
         </header>
 
@@ -146,6 +158,15 @@ function Home() {
               <p className="summary">{summary.en}</p>
             </div>
           </div>
+        </section>
+
+        <section className="card">
+          <h3>Vida Pessoal</h3>
+          <p className="personal-text">
+            Tenho {age} anos, moro na Zona Norte de São Paulo, sou casado e não tenho filhos. Possuo
+            mobilidade reduzida e caminho com o auxílio de uma bengala, o que me torna ainda mais
+            atento a rotinas cuidadosamente planejadas e ambientes verdadeiramente inclusivos.
+          </p>
         </section>
 
         <section className="card grid">
@@ -270,13 +291,6 @@ function Home() {
           color: var(--muted);
         }
 
-        .eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.2em;
-          font-size: 0.9rem;
-          color: var(--accent-soft);
-        }
-
         .location {
           margin-top: 0.75rem;
           color: var(--muted);
@@ -362,6 +376,12 @@ function Home() {
           color: var(--accent-soft);
           font-size: 0.75rem;
           letter-spacing: 0.1em;
+        }
+
+        .personal-text {
+          color: var(--muted);
+          line-height: 1.7;
+          margin: 0;
         }
 
         .tag-list {
