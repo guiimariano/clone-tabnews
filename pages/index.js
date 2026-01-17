@@ -133,6 +133,10 @@ function Home() {
 
         <section className="card split">
           <div>
+            <div className="profile-card">
+              <img src="/assets/profile/guilherme-mariano.jpg" alt="Foto profissional de Guilherme Mariano" />
+              <p className="profile-caption">Software Engineer · Frontend Leadership</p>
+            </div>
             <h3>Contato</h3>
             <ul className="contact-list">
               <li>
@@ -150,10 +154,6 @@ function Home() {
                 </a>
               </li>
             </ul>
-            <div className="profile-card">
-              <img src="/assets/profile/guilherme-mariano.jpg" alt="Foto profissional de Guilherme Mariano" />
-              <p className="profile-caption">Software Engineer · Frontend Leadership</p>
-            </div>
           </div>
           <div>
             <h3>Resumo Profissional</h3>
