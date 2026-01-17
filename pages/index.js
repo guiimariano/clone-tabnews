@@ -10,7 +10,10 @@ const contact = {
   location: 'São Paulo, São Paulo, Brasil',
 };
 
-const summary = `With a journey in technology that began in my adolescence, I progressed to ETEC and later to the Federal Institute of São Paulo, honing my skills in Systems Analysis and Development. Currently at Avanade, I focus on Frontend development, particularly with Angular. My goal is to strengthen my technical foundation, aiming to lead robust projects. I value clear communication and constantly strive to be didactic, inspiring my team to prioritize quality and excellence.`;
+const summary = {
+  pt: 'Engenheiro de Frontend com mais de 7 anos construindo produtos Angular para empresas enterprise. Na Avanade lidero iniciativas de micro frontends, evoluo design systems e acelero squads com foco em performance e acessibilidade. Conecto métricas de negócio a jornadas intuitivas, mentoro o time em melhores práticas modernas e uso testes e observabilidade para garantir releases confiáveis.',
+  en: 'Frontend Engineer with 7+ years building Angular products for enterprise teams. At Avanade I drive micro frontend initiatives, evolve design systems, and accelerate squads through performance and accessibility audits. I partner with stakeholders to turn business metrics into intuitive journeys, mentor engineers on modern tooling, and rely on testing plus observability to ship reliable releases.',
+};
 
 const skills = ['Angular', 'TypeScript', 'JavaScript', 'NgRx', 'Jest', 'Git'];
 
@@ -108,7 +111,7 @@ function Home() {
         <header className="hero">
           <p className="eyebrow">Currículo Interativo</p>
           <h1>Guilherme Mariano</h1>
-          <h2>Software Engineer · Frontend · Angular</h2>
+          <h2>Engenheiro de Software · Frontend · Angular</h2>
           <p className="location">{contact.location}</p>
         </header>
 
@@ -134,7 +137,14 @@ function Home() {
           </div>
           <div>
             <h3>Resumo Profissional</h3>
-            <p className="summary">{summary}</p>
+            <div className="language-card">
+              <span className="language-pill">PT-BR</span>
+              <p className="summary">{summary.pt}</p>
+            </div>
+            <div className="language-card">
+              <span className="language-pill">EN</span>
+              <p className="summary">{summary.en}</p>
+            </div>
           </div>
         </section>
 
@@ -327,6 +337,31 @@ function Home() {
         .summary {
           color: var(--muted);
           line-height: 1.6;
+          margin: 0;
+        }
+
+        .language-card {
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 18px;
+          padding: 1rem 1.25rem;
+          background: rgba(255, 255, 255, 0.02);
+          margin-bottom: 1rem;
+        }
+
+        .language-card:last-child {
+          margin-bottom: 0;
+        }
+
+        .language-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.25rem 0.6rem;
+          border-radius: 999px;
+          background: rgba(255, 111, 60, 0.15);
+          color: var(--accent-soft);
+          font-size: 0.75rem;
+          letter-spacing: 0.1em;
         }
 
         .tag-list {
