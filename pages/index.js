@@ -109,6 +109,10 @@ function getAge(date) {
 
 function Home() {
   const age = getAge(birthDate);
+  const personalLife = {
+    pt: `Tenho ${age} anos, moro na Zona Norte de São Paulo, sou casado e não tenho filhos. Possuo mobilidade reduzida e caminho com o auxílio de uma bengala, o que me torna ainda mais atento a rotinas cuidadosamente planejadas e ambientes verdadeiramente inclusivos.`,
+    en: `I'm ${age} years old, live in the North Zone of São Paulo, married and without kids. I move with reduced mobility and rely on a cane, which makes me even more intentional about well-planned routines and genuinely inclusive environments.`,
+  };
   return (
     <>
       <Head>
@@ -130,6 +134,10 @@ function Home() {
         <section className="card split">
           <div>
             <h3>Contato</h3>
+            <div className="profile-card">
+              <img src="/assets/profile/guilherme-mariano.jpg" alt="Foto profissional de Guilherme Mariano" />
+              <p className="profile-caption">Software Engineer · Frontend Leadership</p>
+            </div>
             <ul className="contact-list">
               <li>
                 <span>Telefone</span>
@@ -162,11 +170,14 @@ function Home() {
 
         <section className="card">
           <h3>Vida Pessoal</h3>
-          <p className="personal-text">
-            Tenho {age} anos, moro na Zona Norte de São Paulo, sou casado e não tenho filhos. Possuo
-            mobilidade reduzida e caminho com o auxílio de uma bengala, o que me torna ainda mais
-            atento a rotinas cuidadosamente planejadas e ambientes verdadeiramente inclusivos.
-          </p>
+          <div className="language-card">
+            <span className="language-pill">PT-BR</span>
+            <p className="personal-text">{personalLife.pt}</p>
+          </div>
+          <div className="language-card">
+            <span className="language-pill">EN</span>
+            <p className="personal-text">{personalLife.en}</p>
+          </div>
         </section>
 
         <section className="card grid">
@@ -376,6 +387,28 @@ function Home() {
           color: var(--accent-soft);
           font-size: 0.75rem;
           letter-spacing: 0.1em;
+        }
+
+        .profile-card {
+          margin-bottom: 1.25rem;
+          border-radius: 22px;
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .profile-card img {
+          width: 100%;
+          display: block;
+          height: auto;
+        }
+
+        .profile-caption {
+          margin: 0;
+          padding: 0.85rem 1rem;
+          text-align: center;
+          color: var(--muted);
+          font-size: 0.95rem;
         }
 
         .personal-text {
