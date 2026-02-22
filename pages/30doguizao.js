@@ -289,6 +289,13 @@ export default function SaveTheDate() {
           0%, 100% { opacity: 0.18; }
           50% { opacity: 0.45; }
         }
+
+        :global(html),
+        :global(body) {
+          margin: 0;
+          padding: 0;
+          background: #050505;
+        }
       `}</style>
     </>
   );
