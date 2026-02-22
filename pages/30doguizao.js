@@ -94,6 +94,8 @@ export default function SaveTheDate() {
 
           <h1 className="title">23 . 05 . 26</h1>
 
+          <p className="roman">XXX</p>
+
           <div className="line" />
 
           <p className="mystery">Algo está por vir.</p>
@@ -109,7 +111,25 @@ export default function SaveTheDate() {
             ))}
           </div>
 
+          <div className="clues">
+            <span className="clue">III</span>
+            <span className="clue-dot" />
+            <span className="clue">décadas</span>
+            <span className="clue-dot" />
+            <span className="clue">nova era</span>
+          </div>
+
+          <div className="eq">
+            <span className="eq-bar" style={{ height: '12px', animationDelay: '0s' }} />
+            <span className="eq-bar" style={{ height: '20px', animationDelay: '0.15s' }} />
+            <span className="eq-bar" style={{ height: '16px', animationDelay: '0.3s' }} />
+            <span className="eq-bar" style={{ height: '24px', animationDelay: '0.1s' }} />
+            <span className="eq-bar" style={{ height: '14px', animationDelay: '0.25s' }} />
+          </div>
+
           <p className="hint">Mais informações em breve...</p>
+
+          <p className="dj-hint">▶ press play when ready</p>
         </div>
       </div>
 
@@ -242,6 +262,66 @@ export default function SaveTheDate() {
           animation: blink 3s ease-in-out infinite;
         }
 
+        /* ===== CLUES ===== */
+        .roman {
+          font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+          letter-spacing: 8px;
+          color: rgba(255, 255, 255, 0.12);
+          margin: 8px 0 0;
+          font-weight: 200;
+        }
+
+        .clues {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          margin-bottom: 50px;
+        }
+
+        .clue {
+          font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+          letter-spacing: 3px;
+          color: rgba(255, 255, 255, 0.14);
+          font-weight: 300;
+          text-transform: uppercase;
+        }
+
+        .clue-dot {
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ===== EQ BARS ===== */
+        .eq {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          gap: 3px;
+          margin-bottom: 40px;
+          height: 28px;
+          opacity: 0.12;
+        }
+
+        .eq-bar {
+          display: block;
+          width: 2px;
+          background: #fff;
+          border-radius: 1px;
+          animation: eqPulse 1.2s ease-in-out infinite alternate;
+        }
+
+        .dj-hint {
+          font-size: 0.55rem;
+          letter-spacing: 4px;
+          color: rgba(255, 255, 255, 0.08);
+          font-weight: 300;
+          text-transform: uppercase;
+          margin-top: 30px;
+        }
+
         /* ===== ANIMATIONS ===== */
         @keyframes fadeUp {
           from {
@@ -288,6 +368,11 @@ export default function SaveTheDate() {
         @keyframes blink {
           0%, 100% { opacity: 0.18; }
           50% { opacity: 0.45; }
+        }
+
+        @keyframes eqPulse {
+          0% { transform: scaleY(0.3); }
+          100% { transform: scaleY(1); }
         }
 
         :global(html),
