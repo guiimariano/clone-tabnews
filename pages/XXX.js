@@ -99,6 +99,8 @@ export default function SaveTheDate() {
           <div className="line" />
 
           <p className="mystery">Algo está por vir.</p>
+          <p className="persona">C H A Ø S</p>
+          <p className="persona persona-2">P E R S Ø N A</p>
 
           <div className="countdown">
             {units.map((u, i) => (
@@ -218,8 +220,26 @@ export default function SaveTheDate() {
           color: rgba(255, 255, 255, 0.5);
           font-weight: 300;
           font-style: italic;
-          margin-bottom: 50px;
+          margin-bottom: 16px;
           letter-spacing: 1px;
+        }
+
+        .persona {
+          font-size: clamp(0.5rem, 1vw, 0.65rem);
+          letter-spacing: 6px;
+          color: rgba(255, 255, 255, 0.07);
+          font-weight: 600;
+          text-transform: uppercase;
+          margin-bottom: 4px;
+          transition: color 3s ease;
+        }
+
+        .persona-2 {
+          margin-bottom: 50px;
+        }
+
+        .persona:hover {
+          color: rgba(255, 255, 255, 0.25);
         }
 
         /* ===== COUNTDOWN ===== */
