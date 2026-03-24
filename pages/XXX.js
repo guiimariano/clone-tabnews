@@ -74,7 +74,7 @@ export default function SaveTheDate() {
   return (
     <>
       <Head>
-        <title>? ? ?</title>
+        <title>Jenny & Gui Fazem 30</title>
         <meta name="robots" content="noindex, nofollow" />
         <link
           href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;600;800&display=swap"
@@ -90,17 +90,27 @@ export default function SaveTheDate() {
         <div className="orb orb-2" />
 
         <div className="content">
-          <p className="overline">SAVE THE DATE</p>
+          <p className="overline">JENNY & GUI FAZEM</p>
 
-          <h1 className="title">23 . 05 . 26</h1>
+          <h1 className="title">30</h1>
+
+          <p className="date-sub">23 . 05 . 26</p>
 
           <p className="roman">XXX</p>
 
           <div className="line" />
 
-          <p className="mystery">Algo está por vir.</p>
-          <p className="persona">C H A Ø S</p>
-          <p className="persona persona-2">P E R S Ø N A</p>
+          <div className="location">
+            <span className="location-pin">📍</span>
+            <p className="location-text">Rua Capitão Amaral, 80 (Stay)</p>
+            <p className="location-hood">Santana</p>
+          </div>
+
+          <div className="lineup">
+            <p className="lineup-label">LINE UP</p>
+            <p className="lineup-name">???</p>
+            <p className="lineup-genre">Nostalgic Musics</p>
+          </div>
 
           <div className="countdown">
             {units.map((u, i) => (
@@ -114,11 +124,9 @@ export default function SaveTheDate() {
           </div>
 
           <div className="clues">
-            <span className="clue">III</span>
+            <span className="clue">+18</span>
             <span className="clue-dot" />
-            <span className="clue">décadas</span>
-            <span className="clue-dot" />
-            <span className="clue">nova era</span>
+            <span className="clue">se for beber, vá de uber</span>
           </div>
 
           <div className="eq">
@@ -129,7 +137,7 @@ export default function SaveTheDate() {
             <span className="eq-bar" style={{ height: '14px', animationDelay: '0.25s' }} />
           </div>
 
-          <p className="hint">Mais informações em breve...</p>
+          <p className="hint">Line up completo em breve...</p>
 
           <p className="dj-hint">▶ press play when ready</p>
         </div>
@@ -199,7 +207,7 @@ export default function SaveTheDate() {
         }
 
         .title {
-          font-size: clamp(2.8rem, 10vw, 7rem);
+          font-size: clamp(4.5rem, 18vw, 12rem);
           font-weight: 200;
           color: #fff;
           letter-spacing: 0.15em;
@@ -215,31 +223,73 @@ export default function SaveTheDate() {
           margin: 30px auto;
         }
 
-        .mystery {
-          font-size: clamp(0.95rem, 2.5vw, 1.25rem);
+        .date-sub {
+          font-size: clamp(0.8rem, 2vw, 1.1rem);
+          letter-spacing: 0.3em;
+          color: rgba(255, 255, 255, 0.25);
+          font-weight: 200;
+          margin: 12px 0 0;
+        }
+
+        .location {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+
+        .location-pin {
+          font-size: 1rem;
+          display: block;
+          margin-bottom: 8px;
+          opacity: 0.5;
+        }
+
+        .location-text {
+          font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+          color: rgba(255, 255, 255, 0.45);
+          font-weight: 300;
+          letter-spacing: 1.5px;
+          margin: 0;
+        }
+
+        .location-hood {
+          font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+          color: rgba(255, 255, 255, 0.2);
+          font-weight: 200;
+          letter-spacing: 3px;
+          text-transform: uppercase;
+          margin: 6px 0 0;
+        }
+
+        .lineup {
+          margin-bottom: 40px;
+          text-align: center;
+        }
+
+        .lineup-label {
+          font-size: clamp(0.55rem, 1.2vw, 0.7rem);
+          letter-spacing: 5px;
+          color: rgba(255, 255, 255, 0.25);
+          font-weight: 300;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        }
+
+        .lineup-name {
+          font-size: clamp(1.1rem, 3vw, 1.5rem);
           color: rgba(255, 255, 255, 0.5);
           font-weight: 300;
+          letter-spacing: 2px;
+          margin: 0 0 6px;
+          animation: blink 3s ease-in-out infinite;
+        }
+
+        .lineup-genre {
+          font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+          color: rgba(255, 255, 255, 0.2);
+          font-weight: 200;
           font-style: italic;
-          margin-bottom: 16px;
-          letter-spacing: 1px;
-        }
-
-        .persona {
-          font-size: clamp(0.5rem, 1vw, 0.65rem);
-          letter-spacing: 6px;
-          color: rgba(255, 255, 255, 0.07);
-          font-weight: 600;
-          text-transform: uppercase;
-          margin-bottom: 4px;
-          transition: color 3s ease;
-        }
-
-        .persona-2 {
-          margin-bottom: 50px;
-        }
-
-        .persona:hover {
-          color: rgba(255, 255, 255, 0.25);
+          letter-spacing: 2px;
+          margin: 0;
         }
 
         /* ===== COUNTDOWN ===== */
