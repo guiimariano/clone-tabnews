@@ -108,7 +108,7 @@ export default function SaveTheDate() {
 
           <div className="lineup">
             <p className="lineup-label">LINE UP</p>
-            <p className="lineup-name">???</p>
+            <p className="lineup-name">Chaos Persona</p>
             <p className="lineup-genre">Nostalgic Musics</p>
           </div>
 
