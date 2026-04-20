@@ -3,6 +3,20 @@ import { useState, useEffect, useMemo } from 'react';
 
 const PARTY_DATE = new Date('2026-05-23T00:00:00');
 
+const PHOTOS_LEFT = [
+  { src: '/assets/party/foto1.jpg', rotate: -4, top: '5%' },
+  { src: '/assets/party/foto2.jpg', rotate: 3, top: '30%' },
+  { src: '/assets/party/foto3.jpg', rotate: -2, top: '55%' },
+  { src: '/assets/party/foto4.jpg', rotate: 5, top: '78%' },
+];
+
+const PHOTOS_RIGHT = [
+  { src: '/assets/party/foto5.jpg', rotate: 4, top: '8%' },
+  { src: '/assets/party/foto6.jpg', rotate: -3, top: '33%' },
+  { src: '/assets/party/foto7.jpg', rotate: 2, top: '58%' },
+  { src: '/assets/party/foto8.jpg', rotate: -5, top: '80%' },
+];
+
 function Particles({ count = 40 }) {
   const dots = useMemo(
     () =>
@@ -36,6 +50,25 @@ function Particles({ count = 40 }) {
         />
       ))}
     </>
+  );
+}
+
+function PhotoMural({ photos, side }) {
+  return (
+    <div className={`mural mural-${side}`}>
+      {photos.map((photo, i) => (
+        <div
+          key={i}
+          className="polaroid"
+          style={{
+            transform: `rotate(${photo.rotate}deg)`,
+            top: photo.top,
+          }}
+        >
+          <img src={photo.src} alt="" className="polaroid-img" />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -88,6 +121,10 @@ export default function SaveTheDate() {
         {/* Glow orbs */}
         <div className="orb orb-1" />
         <div className="orb orb-2" />
+
+        {/* Photo mural */}
+        <PhotoMural photos={PHOTOS_LEFT} side="left" />
+        <PhotoMural photos={PHOTOS_RIGHT} side="right" />
 
         <div className="content">
           <p className="overline">JENNY & GUI FAZEM</p>
@@ -188,6 +225,44 @@ export default function SaveTheDate() {
           background: #fff;
           animation: float linear infinite;
           pointer-events: none;
+        }
+
+        /* ===== PHOTO MURAL ===== */
+        .mural {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          width: 180px;
+          z-index: 1;
+          pointer-events: none;
+        }
+        .mural-left {
+          left: 20px;
+        }
+        .mural-right {
+          right: 20px;
+        }
+        .polaroid {
+          position: absolute;
+          background: #fff;
+          padding: 6px 6px 24px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+          transition: transform 0.4s ease, box-shadow 0.4s ease;
+          animation: fadeUp 1.5s ease-out both;
+          width: 140px;
+        }
+        .polaroid-img {
+          width: 100%;
+          height: 120px;
+          object-fit: cover;
+          display: block;
+          filter: grayscale(0.2) contrast(1.05);
+        }
+
+        @media (max-width: 1100px) {
+          .mural {
+            display: none;
+          }
         }
 
         /* ===== CONTENT ===== */
