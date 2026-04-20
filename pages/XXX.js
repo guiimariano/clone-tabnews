@@ -17,6 +17,8 @@ const PHOTOS_RIGHT = [
   { src: '/assets/party/foto8.jpg', rotate: -5, top: '80%' },
 ];
 
+const ALL_PHOTOS = [...PHOTOS_LEFT, ...PHOTOS_RIGHT];
+
 function Particles({ count = 40 }) {
   const dots = useMemo(
     () =>
@@ -160,6 +162,16 @@ export default function SaveTheDate() {
             ))}
           </div>
 
+          <div className="mobile-gallery">
+            <div className="mobile-track">
+              {[...ALL_PHOTOS, ...ALL_PHOTOS].map((photo, i) => (
+                <div key={i} className="mobile-polaroid" style={{ transform: `rotate(${photo.rotate}deg)` }}>
+                  <img src={photo.src} alt="" className="mobile-polaroid-img" />
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="clues">
             <span className="clue">+18</span>
             <span className="clue-dot" />
@@ -228,7 +240,7 @@ export default function SaveTheDate() {
         }
 
         /* ===== PHOTO MURAL ===== */
-        .mural {
+        :global(.mural) {
           position: fixed;
           top: 0;
           bottom: 0;
@@ -236,13 +248,13 @@ export default function SaveTheDate() {
           z-index: 1;
           pointer-events: none;
         }
-        .mural-left {
+        :global(.mural-left) {
           left: 20px;
         }
-        .mural-right {
+        :global(.mural-right) {
           right: 20px;
         }
-        .polaroid {
+        :global(.polaroid) {
           position: absolute;
           background: #fff;
           padding: 6px 6px 24px;
@@ -250,18 +262,56 @@ export default function SaveTheDate() {
           transition: transform 0.4s ease, box-shadow 0.4s ease;
           animation: fadeUp 1.5s ease-out both;
           width: 140px;
+          overflow: hidden;
         }
-        .polaroid-img {
-          width: 100%;
-          height: 120px;
+        :global(.polaroid-img) {
+          width: 128px;
+          height: 140px;
           object-fit: cover;
+          object-position: center;
           display: block;
           filter: grayscale(0.2) contrast(1.05);
         }
 
         @media (max-width: 1100px) {
-          .mural {
+          :global(.mural) {
             display: none;
+          }
+        }
+
+        /* ===== MOBILE GALLERY ===== */
+        .mobile-gallery {
+          display: none;
+        }
+
+        @media (max-width: 1100px) {
+          .mobile-gallery {
+            display: block;
+            overflow: hidden;
+            margin: 20px -24px;
+            padding: 20px 0;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          }
+          .mobile-track {
+            display: flex;
+            gap: 16px;
+            width: max-content;
+            animation: carousel 24s linear infinite;
+          }
+          .mobile-polaroid {
+            flex: 0 0 auto;
+            background: #fff;
+            padding: 5px 5px 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+          }
+          .mobile-polaroid-img {
+            width: 130px;
+            height: 150px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            filter: grayscale(0.2) contrast(1.05);
           }
         }
 
@@ -518,6 +568,11 @@ export default function SaveTheDate() {
         @keyframes eqPulse {
           0% { transform: scaleY(0.3); }
           100% { transform: scaleY(1); }
+        }
+
+        @keyframes carousel {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
 
         :global(html),
