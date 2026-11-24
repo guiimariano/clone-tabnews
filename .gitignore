@@ -1,2 +1,18 @@
 .next
 node_modules
+
+# Segredos. .env.development segue versionado de propósito: são as
+# credenciais do Postgres em docker local do curso, apontam para localhost
+# e não valem nada fora da sua máquina. Qualquer outro .env fica fora.
+.env
+.env.local
+.env*.local
+.env.production
+.env.vercel
+
+# Nada de dado financeiro aqui. A fonte do /api/financas/telegram vive no
+# projeto privado financas-casal, junto com migrations, regras e extratos.
+dados/
+*.ofx
+fatura*.pdf
+extrato*.pdf
