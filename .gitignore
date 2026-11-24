@@ -16,3 +16,6 @@ dados/
 *.ofx
 fatura*.pdf
 extrato*.pdf
+
+# Currículo: tem telefone, e-mail e histórico. Repo público.
+cv.html
