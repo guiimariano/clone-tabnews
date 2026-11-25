@@ -233,7 +233,9 @@ export function Empilhadas({ meses }) {
 // colunas somam o MESMO total: se sobrou, entra "Sobra" no meio; se faltou,
 // entra "Déficit" do lado das receitas (o dinheiro veio de saldo, reserva
 // ou limite). Sem isso o gráfico esconderia justamente o mês ruim.
-export function Fluxo({ entradas, categorias }) {
+export function Fluxo({ entradas, categorias: todas }) {
+  // categoria com saldo negativo (venda/estorno maior que o gasto) não tem fluxo
+  const categorias = todas.filter((c) => c.valor > 0);
   const totalEnt = entradas.reduce((a, e) => a + e.valor, 0);
   const totalSai = categorias.reduce((a, c) => a + c.valor, 0);
   if (!totalEnt && !totalSai) return <p className="vazio">Sem movimento no mês.</p>;
