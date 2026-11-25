@@ -31,12 +31,14 @@ const brl0 = (v) => Number(v ?? 0).toLocaleString('pt-BR', { maximumFractionDigi
 const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const rotuloMes = (iso) => `${MES[Number(iso.slice(5, 7)) - 1]}/${iso.slice(2, 4)}`;
 
-// ok / atenção / estourou — sempre com rótulo, nunca cor sozinha
+// Estado do mês do plano contra o teto — sempre com rótulo, nunca cor
+// sozinha. Só se aplica ao mês planejado: o histórico não tinha plano,
+// então não "estourou" nada, e o painel não diz isso dele.
 function estado(pct) {
   if (pct === null || pct === undefined) return { chave: 'neutro', rotulo: '—', icone: '' };
-  if (pct > 100) return { chave: 'critico', rotulo: 'estourou', icone: '▲' };
-  if (pct >= 80) return { chave: 'atencao', rotulo: 'atenção', icone: '●' };
-  return { chave: 'ok', rotulo: 'ok', icone: '✓' };
+  if (pct > 100) return { chave: 'critico', rotulo: 'passou do teto', icone: '▲' };
+  if (pct >= 80) return { chave: 'atencao', rotulo: 'perto do teto', icone: '●' };
+  return { chave: 'ok', rotulo: 'dentro', icone: '✓' };
 }
 
 /* ---------------------------------------------------------------- tiles */
@@ -221,6 +223,7 @@ function Barras({ itens, campo, rotuloCampo }) {
             <div className="hb-num">
               <span className="tab">{brl0(v)}</span>
               {i.limite > 0 && <span className="muted"> de {brl0(i.limite)}</span>}
+              {i.ref > 0 && <div className="hb-ref muted">antes ~{brl0(i.ref)}/mês</div>}
             </div>
             <div className={`hb-est est-${e.chave}`}>
               <span aria-hidden="true">{e.icone}</span> {e.rotulo}
@@ -229,17 +232,24 @@ function Barras({ itens, campo, rotuloCampo }) {
         );
       })}
       <p className="nota">
-        Barra: {rotuloCampo}. Marca vertical: o limite. Estado por ícone e texto, não só por cor.
+        Barra: {rotuloCampo}. Marca vertical: o teto planejado. Estado por ícone e texto, não só por cor.
       </p>
     </div>
   );
 }
 
 /* ------------------------------------------------------------- metas */
-function Metas({ metas }) {
+function Metas({ metas, plano }) {
   if (!metas.length) return <p className="vazio">Nenhuma meta ativa.</p>;
+  const pedem = metas.reduce((a, m) => a + (m.aporte_mensal_necessario ?? 0), 0);
   return (
     <div className="gcont">
+      <p className="metas-resumo">
+        Juntas pedem <strong className="tab">R$ {brl0(pedem)}/mês</strong>
+        {' '}({((pedem / plano.renda_prevista) * 100).toFixed(0)}% da renda).
+        {' '}Depois de fixos e metas, sobram <strong className="tab">R$ {brl0(plano.disponivel_variaveis)}</strong>
+        {' '}para os variáveis, cujos tetos somam R$ {brl0(plano.limites_variaveis)}.
+      </p>
       {metas.map((m) => (
         <div key={m.slug} className="meta">
           <div className="meta-topo">
@@ -269,10 +279,18 @@ function Metas({ metas }) {
 export default function Financas({ ok, erro, dados }) {
   if (!ok) return <Portao erro={erro} />;
 
-  const { plano, grupos, serie, categorias, metas, pendentes, maiores, baseline, pagadores, cego } = dados;
+  const { plano, grupos, serie, categorias, metas, pendentes, maiores, baseline, pagadores, cego,
+          abertas, mesAtual, mesPlano } = dados;
   const meses = [...new Set(serie.map((r) => r.mes_ref))].sort();
-  // Parciais: o primeiro mês (o extrato começa no dia 27) e o corrente.
-  const parciais = [meses[0], plano.mes_ref].filter(Boolean);
+  // Parciais: o primeiro mês (o extrato começa no dia 27), o corrente e
+  // o do plano, que ainda está enchendo.
+  const parciais = [meses[0], ...meses.filter((m) => m >= mesAtual)].filter(Boolean);
+  const mesP = rotuloMes(mesPlano);
+  // Plano: gasto do mês planejado contra o teto, com o que costumava ser
+  // gasto (mediana dos meses fechados) só como referência.
+  const refPor = Object.fromEntries(baseline.map((b) => [b.slug, b.mediana]));
+  const planoCats = categorias.map((c) => ({ ...c, ref: refPor[c.slug] }));
+  const totalAberto = abertas.reduce((a, x) => a + x.valor, 0);
   const mesesFechados = meses.filter((m) => !parciais.includes(m));
   const folgaTom = plano.folga < 0 ? 'critico' : plano.folga < 500 ? 'atencao' : 'ok';
 
@@ -284,9 +302,10 @@ export default function Financas({ ok, erro, dados }) {
           <div>
             <h1>Finanças</h1>
             <p className="sub">
-              {meses.length} meses medidos · {rotuloMes(plano.mes_ref)} em andamento
+              {meses.length} meses medidos · planejando {mesP}
             </p>
           </div>
+          <a className="conectar" href="/financas/conectar">conectar bancos</a>
           <form method="POST" action="/api/financas/login">
             <input type="hidden" name="acao" value="sair" />
             <button type="submit" className="sair">sair</button>
@@ -294,7 +313,7 @@ export default function Financas({ ok, erro, dados }) {
         </header>
 
         <section className="tiles">
-          <Tile rotulo="Renda do mês" valor={`R$ ${brl0(plano.renda_prevista)}`}
+          <Tile rotulo={`Renda de ${mesP}`} valor={`R$ ${brl0(plano.renda_prevista)}`}
                 nota="salários + benefício" />
           <Tile rotulo="Fixos previstos" valor={`R$ ${brl0(plano.fixos_previstos)}`}
                 nota="moradia, contas, telefone" />
@@ -303,6 +322,27 @@ export default function Financas({ ok, erro, dados }) {
           <Tile rotulo="Folga" valor={`R$ ${brl0(plano.folga)}`} tom={folgaTom}
                 nota={plano.folga < 0 ? 'o plano não fecha' : 'sobra prevista'} />
         </section>
+
+        {abertas.length > 0 && (
+          <section className="abertas">
+            <h2>Contas em aberto · {mesP}</h2>
+            <p className="desc">O que sai quando a renda cair na virada do mês.</p>
+            <div className="cego-linhas">
+              {abertas.map((a) => (
+                <div key={a.slug}>
+                  <span className="tab">R$ {brl0(a.valor)}</span>
+                  <span className="muted"> · {a.nome}
+                    {a.previsao ? ' — previsão, troca pelo valor real quando o débito sair'
+                                : ` — ${a.n} compras até agora, fatura ainda aberta`}</span>
+                </div>
+              ))}
+              <div className="cego-total">
+                <span className="tab">R$ {brl0(totalAberto)}</span>
+                <span className="muted"> em aberto</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         {cego.totalMes > 0 && (
           <section className="cego">
@@ -350,28 +390,21 @@ export default function Financas({ ok, erro, dados }) {
         </section>
 
         <section>
-          <h2>Onde gastamos demais</h2>
+          <h2>Plano de {mesP}</h2>
           <p className="desc">
-            Mediana dos meses fechados contra o limite de cada categoria. Mediana e não média,
-            para um mês atípico não definir o teto dos outros.
-          </p>
-          <Barras itens={baseline} campo="mediana" rotuloCampo="mediana dos meses medidos" />
-        </section>
-
-        <section>
-          <h2>O mês corrente</h2>
-          <p className="desc">
-            Enche conforme vocês lançam no bot. {pendentes.n > 0 && (
-              <>Há <strong>{pendentes.n} lançamentos sem categoria</strong> (R$ {brl0(pendentes.valor)})
+            O teto de cada categoria daqui pra frente e quanto já foi gasto em {mesP}.
+            O "antes" é a mediana dos meses medidos, sem plano — só referência, não meta.
+            {pendentes.n > 0 && (
+              <> Há <strong>{pendentes.n} lançamentos sem categoria</strong> (R$ {brl0(pendentes.valor)})
               — use <code>/classificar</code> no grupo.</>
             )}
           </p>
-          <Barras itens={categorias} campo="gasto" rotuloCampo="gasto até agora" />
+          <Barras itens={planoCats} campo="gasto" rotuloCampo={`gasto em ${mesP}`} />
         </section>
 
         <section>
           <h2>Metas</h2>
-          <Metas metas={metas} />
+          <Metas metas={metas} plano={plano} />
         </section>
 
         <div className="duas">
@@ -552,6 +585,10 @@ function Estilo() {
       .viz-root .tom-ok { border-left: 4px solid var(--ok); }
 
       .viz-root .cego { border-left: 4px solid var(--atencao); }
+      .viz-root .conectar { margin-left: auto; margin-right: 12px; font-size: 0.85rem; color: var(--ink-2); }
+      .viz-root .abertas { border-left: 4px solid var(--critico); }
+      .viz-root .hb-ref { font-size: 0.75rem; }
+      .viz-root .metas-resumo { margin: 0 0 6px; font-size: 0.9rem; }
       .viz-root .cego-linhas { display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; }
       .viz-root .cego-linhas .tab { font-size: 1.05rem; font-weight: 600; }
       .viz-root .cego-total { border-top: 1px solid var(--linha); padding-top: 9px; margin-top: 3px; }
