@@ -17,6 +17,8 @@
 // histórico inteiro a cada leitura.
 import { sincronizar } from '../../../../lib/financas/pluggy-sync.js';
 import { configurado } from '../../../../lib/financas/pluggy.js';
+import { previsaoCaixa, textoCaixa, precisaAvisarCaixa } from '../../../../lib/financas/dados.js';
+import { responder } from '../../../../lib/financas/telegram.js';
 
 export const config = { maxDuration: 300 };
 
@@ -41,6 +43,19 @@ export default async function handler(req, res) {
       ? `${c.conta}: saldo ${c.saldo}`
       : `${c.conta}: ${c.novas} novas, ${c.atualizadas} atualizadas, ${c.removidas} removidas`));
     console.log(`pluggy-sync ${execucao} ok em ${Date.now() - t0}ms · ${resumo.join(' · ')}`);
+
+    // Caixa (0031): avisa no grupo quando o próximo débito não tem saldo.
+    // Falha no aviso não derruba a sync, que já gravou tudo.
+    try {
+      const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+      const c = await previsaoCaixa(hoje);
+      if (precisaAvisarCaixa(c, hoje) && process.env.TELEGRAM_CHAT_ID) {
+        await responder(process.env.TELEGRAM_CHAT_ID, textoCaixa(c));
+        console.log(`pluggy-sync ${execucao}: aviso da Caixa enviado (falta ${c.falta})`);
+      }
+    } catch (e) {
+      console.error(`pluggy-sync ${execucao}: aviso da Caixa falhou:`, e.message);
+    }
     return res.status(200).json({ ok: true, execucao, contas: resumo, descobertas: r.descobertas.length });
   } catch (e) {
     console.error(`pluggy-sync ${execucao} falhou em ${Date.now() - t0}ms:`, e.message);

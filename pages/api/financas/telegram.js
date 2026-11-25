@@ -11,7 +11,7 @@
 // reentrega é duplicata. Devolver 200 evita a tentativa.
 import { q, brl, hojeSP, mesRefSP } from '../../../lib/financas/pg.js';
 import { parse } from '../../../lib/financas/parser.js';
-import { dashboard } from '../../../lib/financas/dados.js';
+import { dashboard, previsaoCaixa, textoCaixa } from '../../../lib/financas/dados.js';
 import {
   responderA, responder, editar, confirmarBotao, tecladoCategorias, barra,
 } from '../../../lib/financas/telegram.js';
@@ -149,8 +149,14 @@ async function comando(msg, r) {
       `Resultado: <b>R$ ${brl(rec - desp)}</b>\n${ritmo}\n` +
       `<b>Maiores gastos</b>\n${top}\n\n` +
       `Faturas em aberto: R$ ${brl(aberto)} · /faturas` +
+      (d.caixa?.transferir ? `
+🏠 Caixa: faltam R$ ${brl(d.caixa.transferir)} até ${d.caixa.negativoEm.slice(8, 10)}/${d.caixa.negativoEm.slice(5, 7)} · /caixa` : '') +
       (d.pendentes.n ? `\nSem categoria: ${d.pendentes.n} (R$ ${brl(d.pendentes.valor)}) · /classificar` : '') +
       `\n\n${PAINEL}`);
+  }
+
+  if (r.comando === 'caixa') {
+    return responder(chat, textoCaixa(await previsaoCaixa()));
   }
 
   if (r.comando === 'faturas') {

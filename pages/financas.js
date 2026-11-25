@@ -194,6 +194,24 @@ export default function Dashboard({ ok, erro, d }) {
               <p className="nota" style={{ marginTop: 6 }}>Saldo em conta: <strong className="tab">R$ {brl(saldoBancos)}</strong></p>
             </>
           )}
+          {d.caixa && (
+            <div className="cartao-credito">
+              <div className="lista-contas">
+                <div><strong>Caixa (apartamento)</strong><span className={`tab ${d.caixa.saldo < 0 ? 'neg' : ''}`}>R$ {brl(d.caixa.saldo)}</span></div>
+                {d.caixa.proximos.map((x) => (
+                  <div key={x.nome} className="muted" style={{ fontSize: '0.8rem' }}>
+                    <span>{dataCurta(x.data)} · {x.nome} R$ {brl(x.valor)}</span>
+                    <span className={`tab ${x.saldoDepois < 0 ? 'neg' : ''}`}>fica R$ {brl(x.saldoDepois)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className={`nota ${d.caixa.transferir ? 'est-critico' : 'est-ok'}`} style={{ marginTop: 6 }}>
+                {d.caixa.transferir
+                  ? `⚠ Transfira R$ ${brl0(d.caixa.transferir)} antes de ${dataCurta(d.caixa.negativoEm)} para não entrar no cheque especial.`
+                  : '✓ O saldo cobre os próximos débitos.'}
+              </p>
+            </div>
+          )}
           {cartoes.map((c) => {
             const aberta = d.abertas.find((a) => (c.slug && a.slug === c.slug));
             const uso = c.limite ? ((c.limite - (c.limite_livre ?? c.limite)) / c.limite) * 100 : null;
