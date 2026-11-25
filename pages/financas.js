@@ -308,14 +308,14 @@ export default function Financas({ ok, erro, dados }) {
           <section className="cego">
             <h2>Fora do orçamento</h2>
             <p className="desc">
-              A folga acima confronta só as categorias <strong>com limite</strong>. Isto sai todo mês
-              e não entra em nenhum teto, então uma folga perto de zero pode tranquilizar sem base.
+              A folga acima confronta só as categorias <strong>com limite</strong>. Isto sai
+              do bolso e não entra em nenhum teto, então uma folga perto de zero pode tranquilizar sem base.
             </p>
             <div className="cego-linhas">
               <div>
-                <span className="tab">R$ {brl0(cego.faturaMes)}</span>
-                <span className="muted"> /mês · fatura de cartão paga como transferência — o gasto
-                está dentro dela, não aqui</span>
+                <span className="tab">R$ {brl0(cego.extraMes)}</span>
+                <span className="muted"> /mês em média · compras adicionais — o que a fatura do
+                Santander passa de R$ 500, fora do padrão e sem teto</span>
               </div>
               <div>
                 <span className="tab">R$ {brl0(cego.semCategoriaMes)}</span>
