@@ -2,13 +2,16 @@
 // A fonte e os testes ficam no projeto privado financas-casal.
 // Webhook do bot. Função serverless na Vercel.
 //
+// SÓ CONSULTA desde 25/11/2026: os gastos entram pela Pluggy (Open
+// Finance). O bot responde /resumo, /faturas, /saldo, /metas, classifica
+// pendentes (/classificar e botões) e registra APORTE em meta (#meta valor)
+// — aporte não é gasto, e o banco não sabe para qual meta foi o dinheiro.
+//
 // Responde 200 SEMPRE: o Telegram reentrega o update quando recebe erro, e
-// reentrega é duplicata. A idempotência real vem de
-// origem_ref = 'tg:<update_id>' com unique (origem, origem_ref) no banco,
-// mas devolver 200 evita a tentativa.
-import { randomUUID } from 'node:crypto';
+// reentrega é duplicata. Devolver 200 evita a tentativa.
 import { q, brl, hojeSP, mesRefSP } from '../../../lib/financas/pg.js';
-import { parse, dividirParcelas } from '../../../lib/financas/parser.js';
+import { parse } from '../../../lib/financas/parser.js';
+import { dashboard } from '../../../lib/financas/dados.js';
 import {
   responderA, responder, editar, confirmarBotao, tecladoCategorias, barra,
 } from '../../../lib/financas/telegram.js';
@@ -73,7 +76,7 @@ async function tratar(update) {
   switch (r.tipo) {
     case 'comando':   return comando(msg, r);
     case 'aporte':    return aporte(msg, r, usuario);
-    case 'lancamento':return lancar(msg, r, usuario, update.update_id);
+    case 'lancamento':return avisoConsulta(msg, r);
     case 'erro':
       // Mensagem sem número é conversa, não lançamento malfeito: fica calado.
       if (r.erro === 'sem_valor') return;
@@ -83,57 +86,16 @@ async function tratar(update) {
   }
 }
 
-// ---------- lançamento ----------
-async function lancar(msg, r, usuario, updateId) {
-  const parcelas = dividirParcelas(r.valor, r.parcelas);
-  const grupo = r.parcelas > 1 ? randomUUID() : null;
-  const hoje = hojeSP();
-  let primeiroId = null;
-
-  for (let i = 0; i < parcelas.length; i++) {
-    const ins = await q(
-      `insert into public.lancamentos
-         (data_compra, mes_ref, valor, tipo, categoria_id, descricao,
-          usuario_id, pagador_id, origem, origem_ref, texto_original,
-          parcela_grupo_id, parcela_num, parcela_total)
-       values ($1,$2,$3,$4,$5,$6,$7,$7,'telegram',$8,$9,$10,$11,$12)
-       on conflict (origem, origem_ref) do nothing
-       returning id`,
-      [
-        hoje, mesRefSP(i), parcelas[i],
-        r.intencao, r.categoria_id, r.descricao,
-        usuario.id,
-        `tg:${updateId}:${i}`, r.texto,
-        grupo, i + 1, r.parcelas,
-      ]
-    );
-    if (i === 0) primeiroId = ins.rows[0]?.id ?? null;
-  }
-
-  // reentrega do mesmo update: já estava gravado, não responde de novo
-  if (!primeiroId) return;
-
-  const sinal = r.intencao === 'entrada' ? '💰' : '✅';
-  const parc = r.parcelas > 1 ? ` em ${r.parcelas}x de R$ ${brl(parcelas[1] ?? parcelas[0])}` : '';
-  const desc = r.descricao ? ` · ${r.descricao}` : '';
-
-  // sem categoria: pergunta com botões em vez de chutar
-  if (!r.categoria_id && r.intencao === 'saida') {
-    const cats = await q(
-      `select id, nome from public.categorias
-        where ativo and tipo = 'variavel' order by ordem limit 9`);
-    return responderA(
-      msg.chat.id, msg.message_id,
-      `❓ R$ ${brl(r.valor)}${desc}${parc}\nQual categoria?`,
-      tecladoCategorias(primeiroId, cats.rows)
-    );
-  }
-
-  const saldo = await textoSaldo(r.categoria_id);
-  return responderA(
-    msg.chat.id, msg.message_id,
-    `${sinal} <b>R$ ${brl(r.valor)}</b>${desc}${parc} · ${usuario.apelido}\n${saldo}`
-  );
+// ---------- lançamento: não grava mais ----------
+// Só avisa quando a intenção é clara (categoria reconhecida ou entrada com
+// +). Número solto no meio da conversa continua sem resposta.
+const PAINEL = 'https://guimariano.com.br/financas';
+async function avisoConsulta(msg, r) {
+  if (!r.categoria_id && r.intencao !== 'entrada') return;
+  return responderA(msg.chat.id, msg.message_id,
+    '📊 Não precisa mais lançar: os gastos entram sozinhos pela Pluggy (Open Finance).\n' +
+    '/resumo · /faturas · /saldo · /metas\n' +
+    `Painel: ${PAINEL}`);
 }
 
 // ---------- aporte em meta ----------
@@ -168,6 +130,39 @@ async function aporte(msg, r, usuario) {
 // ---------- comandos ----------
 async function comando(msg, r) {
   const chat = msg.chat.id;
+
+  if (r.comando === 'resumo') {
+    const d = await dashboard();
+    const soma = (tipo) => d.totais.filter((t) => t.mes_ref === d.mes && t.tipo === tipo)
+      .reduce((a, t) => a + t.valor, 0);
+    const rec = soma('entrada'), desp = soma('saida');
+    const ponto = d.curva[d.hoje - 1];
+    const ritmo = ponto && ponto.mediana !== null
+      ? `${ponto.mes > ponto.mediana ? '🔺' : '🔹'} R$ ${brl(Math.abs(ponto.mes - ponto.mediana))} ` +
+        `${ponto.mes > ponto.mediana ? 'acima' : 'abaixo'} da mediana até o dia ${d.hoje}\n`
+      : '';
+    const top = d.porCategoria.slice(0, 5).map((c) => `  ${c.nome}: R$ ${brl(c.valor)}`).join('\n');
+    const aberto = d.abertas.reduce((a, x) => a + x.valor, 0);
+    return responder(chat,
+      `<b>Resumo do mês</b> (dia ${d.hoje} de ${d.diasMes})\n\n` +
+      `Receitas: R$ ${brl(rec)}\nDespesas: R$ ${brl(desp)}\n` +
+      `Resultado: <b>R$ ${brl(rec - desp)}</b>\n${ritmo}\n` +
+      `<b>Maiores gastos</b>\n${top}\n\n` +
+      `Faturas em aberto: R$ ${brl(aberto)} · /faturas` +
+      (d.pendentes.n ? `\nSem categoria: ${d.pendentes.n} (R$ ${brl(d.pendentes.valor)}) · /classificar` : '') +
+      `\n\n${PAINEL}`);
+  }
+
+  if (r.comando === 'faturas') {
+    const d = await dashboard();
+    if (!d.abertas.length) return responder(chat, '✨ Nenhuma fatura em aberto.');
+    const dt = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '—');
+    const linhas = d.abertas.map((a) =>
+      `💳 <b>${a.nome}</b>\n     R$ ${brl(a.valor)} · vence ${dt(a.vence)}` +
+      (a.previsao ? ' (saldo do cartão)' : ` · ${a.n} compras`));
+    const total = d.abertas.reduce((s, a) => s + a.valor, 0);
+    return responder(chat, `<b>Faturas em aberto</b>\n\n${linhas.join('\n')}\n\nTotal: <b>R$ ${brl(total)}</b>`);
+  }
 
   if (r.comando === 'saldo' && r.args.length) {
     const cat = await q(
@@ -226,12 +221,14 @@ async function comando(msg, r) {
 
   return responder(chat,
     '<b>Como usar</b>\n\n' +
-    '<code>mercado 20 arroz</code> — lançamento\n' +
-    '<code>20 mercado arroz</code> — ordem livre\n' +
-    '<code>casa 2400 12x geladeira</code> — parcelado\n' +
-    '<code>+salario 7200</code> — entrada\n' +
-    '<code>#reserva 1500</code> — aporte em meta\n\n' +
-    '/saldo · /saldo mercado · /metas · /pendentes · /classificar');
+    'Os gastos entram sozinhos pela Pluggy. Aqui é para consultar:\n\n' +
+    '/resumo — o mês até agora\n' +
+    '/faturas — cartões em aberto e vencimento\n' +
+    '/saldo · /saldo mercado — tetos do orçamento\n' +
+    '/metas — progresso das metas\n' +
+    '/pendentes · /classificar — compras sem categoria\n\n' +
+    '<code>#reserva_emergencia 1500</code> — registrar aporte em meta\n\n' +
+    `Painel completo: ${PAINEL}`);
 }
 
 // ---------- botão de categoria ----------
@@ -266,5 +263,5 @@ async function textoSaldo(categoriaId) {
   const x = o.rows[0];
   if (!x.limite) return `${x.nome}: R$ ${brl(x.gasto)} este mês (sem limite)`;
   return `${barra(x.pct)} ${x.nome}: ${brl(x.gasto)} de ${brl(x.limite)}` +
-         (Number(x.saldo) >= 0 ? ` · resta R$ ${brl(x.saldo)}` : ` · <b>estourou R$ ${brl(-x.saldo)}</b>`);
+         (Number(x.saldo) >= 0 ? ` · resta R$ ${brl(x.saldo)}` : ` · <b>passou do teto em R$ ${brl(-x.saldo)}</b>`);
 }
