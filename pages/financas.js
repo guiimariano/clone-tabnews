@@ -269,8 +269,8 @@ export default function Dashboard({ ok, erro, d }) {
                         {t.categoria ?? 'sem categoria'}{t.pessoa ? ` · ${t.pessoa}` : ''}{t.conciliado === false ? ' · pendente' : ''}
                       </div>
                     </td>
-                    <td className={`num tab ${t.tipo === 'entrada' ? 'pos' : ''}`}>
-                      {t.tipo === 'entrada' ? '+' : ''}{brl(t.valor)}
+                    <td className={`num tab ${t.tipo === 'entrada' || t.valor < 0 ? 'pos' : ''}`}>
+                      {t.tipo === 'entrada' || t.valor < 0 ? '+' : ''}{brl(Math.abs(t.valor))}
                     </td>
                   </tr>
                 ))}

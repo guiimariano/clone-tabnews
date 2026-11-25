@@ -64,7 +64,9 @@ export default function Transacoes({ ok, erro, linhas: inicial, cad, mes, period
   const filtradas = useMemo(() => {
     const busca = (f.q ?? '').toLowerCase().trim();
     let r = linhas.filter((l) => {
-      if (f.tipo && l.tipo !== f.tipo) return false;
+      // "retorno" = dinheiro que voltou (venda de item, estorno): saída negativa
+      if (f.tipo === 'retorno') { if (!(l.tipo === 'saida' && l.valor < 0)) return false; }
+      else if (f.tipo && l.tipo !== f.tipo) return false;
       if (f.conta && l.conta !== f.conta) return false;
       if (f.pessoa && (l.pessoa ?? '_') !== f.pessoa) return false;
       if (f.categoria === '_sem') { if (l.categoria_id || l.tipo !== 'saida') return false; }
@@ -179,6 +181,7 @@ export default function Transacoes({ ok, erro, linhas: inicial, cad, mes, period
           <option value="">entradas, saídas e transf.</option>
           <option value="saida">saídas</option>
           <option value="entrada">entradas</option>
+          <option value="retorno">retornos (vendas e estornos)</option>
           <option value="transferencia">transferências</option>
         </select>
         <select value={f.conta ?? ''} onChange={(e) => muda('conta', e.target.value)} aria-label="conta">
@@ -247,6 +250,7 @@ export default function Transacoes({ ok, erro, linhas: inicial, cad, mes, period
                       {l.automatico ? <span className="selo">{l.automatico}</span>
                         : l.conciliado === false && <span className="selo">pendente</span>}
                       {l.tipo === 'transferencia' && <span className="selo">transferência</span>}
+                      {l.tipo === 'saida' && l.valor < 0 && <span className="selo">retorno</span>}
                     </span>
                   </td>
                   <td>
@@ -257,9 +261,10 @@ export default function Transacoes({ ok, erro, linhas: inicial, cad, mes, period
                   <td className="muted" style={{ whiteSpace: 'nowrap' }}>{contaNome[l.conta] ?? l.conta}</td>
                   <td className="muted">{l.pessoa ?? ''}</td>
                   {periodo === '12m' && <td className="muted tab">{rotuloMes(l.mes_ref)}</td>}
-                  <td className={`num tab ${l.tipo === 'entrada' ? 'pos' : l.tipo === 'transferencia' ? 'muted' : ''}`}
+                  <td className={`num tab ${l.tipo === 'entrada' || l.valor < 0 ? 'pos' : l.tipo === 'transferencia' ? 'muted' : ''}`}
                       style={{ whiteSpace: 'nowrap' }}>
-                    {l.tipo === 'entrada' ? '+' : l.tipo === 'saida' ? '−' : ''}{brl(l.valor)}
+                    {/* retorno (venda de item, estorno): saída negativa, abate o gasto (0030) */}
+                    {l.tipo === 'entrada' || l.valor < 0 ? '+' : l.tipo === 'saida' ? '−' : ''}{brl(Math.abs(l.valor))}
                   </td>
                 </tr>
               ))}
