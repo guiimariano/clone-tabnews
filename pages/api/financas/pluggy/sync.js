@@ -17,7 +17,7 @@
 // histórico inteiro a cada leitura.
 import { sincronizar } from '../../../../lib/financas/pluggy-sync.js';
 import { configurado } from '../../../../lib/financas/pluggy.js';
-import { textoCaixa, precisaAvisarCaixa, agenda, avisoAgenda, tecladoBoletos } from '../../../../lib/financas/dados.js';
+import { lembreteDoDia } from '../../../../lib/financas/dados.js';
 import { q } from '../../../../lib/financas/pg.js';
 import { responder } from '../../../../lib/financas/telegram.js';
 
@@ -46,23 +46,25 @@ export default async function handler(req, res) {
     console.log(`pluggy-sync ${execucao} ok em ${Date.now() - t0}ms · ${resumo.join(' · ')}`);
 
     // Lembrete do dia (0032): contas que vencem, boleto atrasado, saldo que
-    // vai faltar no Santander ou na Caixa. Uma mensagem por dia no máximo
+    // vai faltar no Santander ou na Caixa, e categoria que passou de 80% ou
+    // 100% do teto (uma vez por faixa no mês). Uma mensagem por dia no máximo
     // (avisos_enviados), mesmo se o schedule disparar duas vezes. Falha no
     // aviso não derruba a sync, que já gravou tudo.
     try {
       const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
       const baixas = (await q('select public.conciliar_contas_a_pagar() as n')).rows[0].n;
       if (baixas) console.log(`pluggy-sync ${execucao}: ${baixas} boleto(s) com baixa automática`);
-      const a = await agenda(hoje);
-      const aviso = avisoAgenda(a);
-      const texto = aviso?.texto ?? (precisaAvisarCaixa(a.caixa, hoje) ? textoCaixa(a.caixa) : null);
-      if (texto && process.env.TELEGRAM_CHAT_ID) {
+      const l = await lembreteDoDia(hoje);
+      if (l && process.env.TELEGRAM_CHAT_ID) {
         const marca = await q(
           `insert into public.avisos_enviados (chave) values ($1) on conflict do nothing returning chave`,
           [`lembrete:${hoje}`]);
         if (marca.rowCount) {
-          await responder(process.env.TELEGRAM_CHAT_ID, texto, tecladoBoletos(aviso?.boletos));
-          console.log(`pluggy-sync ${execucao}: lembrete enviado`);
+          await responder(process.env.TELEGRAM_CHAT_ID, l.texto, l.teclado);
+          if (l.chaves.length) {
+            await q(`insert into public.avisos_enviados (chave) select unnest($1::text[]) on conflict do nothing`, [l.chaves]);
+          }
+          console.log(`pluggy-sync ${execucao}: lembrete enviado (${l.chaves.length} marca(s) de teto)`);
         }
       }
     } catch (e) {

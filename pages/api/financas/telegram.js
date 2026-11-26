@@ -13,7 +13,7 @@
 import { q, brl, hojeSP, mesRefSP } from '../../../lib/financas/pg.js';
 import { parse } from '../../../lib/financas/parser.js';
 import {
-  dashboard, previsaoCaixa, textoCaixa, agenda, textoAgenda, lerBoleto, tecladoBoletos,
+  dashboard, previsaoCaixa, textoCaixa, agenda, textoAgenda, lerBoleto, tecladoBoletos, PAINEL, RODAPE,
 } from '../../../lib/financas/dados.js';
 import {
   responderA, responder, editar, confirmarBotao, tecladoCategorias, barra,
@@ -92,13 +92,12 @@ async function tratar(update) {
 // ---------- lançamento: não grava mais ----------
 // Só avisa quando a intenção é clara (categoria reconhecida ou entrada com
 // +). Número solto no meio da conversa continua sem resposta.
-const PAINEL = 'https://guimariano.com.br/financas';
 async function avisoConsulta(msg, r) {
   if (!r.categoria_id && r.intencao !== 'entrada') return;
   return responderA(msg.chat.id, msg.message_id,
     '📊 Não precisa mais lançar: os gastos entram sozinhos pela Pluggy (Open Finance).\n' +
     '/resumo · /faturas · /saldo · /metas\n' +
-    `Painel: ${PAINEL}`);
+    RODAPE);
 }
 
 // ---------- aporte em meta ----------
@@ -192,7 +191,7 @@ async function comando(msg, r, usuario) {
       (d.caixa?.etapas?.length ? `\n🏠 Caixa: transfira ` + d.caixa.etapas.map((e) =>
         `R$ ${brl(e.valor)} até ${e.ate.slice(8, 10)}/${e.ate.slice(5, 7)}`).join(' e ') + ' · /caixa' : '') +
       (d.pendentes.n ? `\nSem categoria: ${d.pendentes.n} (R$ ${brl(d.pendentes.valor)}) · /classificar` : '') +
-      `\n\n${PAINEL}`);
+      `\n\n${RODAPE}`);
   }
 
   if (r.comando === 'caixa') {
@@ -207,7 +206,7 @@ async function comando(msg, r, usuario) {
       `💳 <b>${a.nome}</b>\n     R$ ${brl(a.valor)} · vence ${dt(a.vence)}` +
       (a.previsao ? ' (saldo do cartão)' : ` · ${a.n} compras`));
     const total = d.abertas.reduce((s, a) => s + a.valor, 0);
-    return responder(chat, `<b>Faturas em aberto</b>\n\n${linhas.join('\n')}\n\nTotal: <b>R$ ${brl(total)}</b>`);
+    return responder(chat, `<b>Faturas em aberto</b>\n\n${linhas.join('\n')}\n\nTotal: <b>R$ ${brl(total)}</b>\n\n${RODAPE}`);
   }
 
   if (r.comando === 'saldo' && r.args.length) {
@@ -228,7 +227,7 @@ async function comando(msg, r, usuario) {
     return responder(chat,
       `<b>Orçamento do mês</b>\n\n${linhas.join('\n')}\n\n` +
       `Disponível para variáveis: R$ ${brl(pl.disponivel_variaveis)}\n` +
-      `Folga: R$ ${brl(pl.folga)}`);
+      `Folga: R$ ${brl(pl.folga)}\n\n${RODAPE}`);
   }
 
   if (r.comando === 'metas') {
@@ -238,7 +237,7 @@ async function comando(msg, r, usuario) {
     return responder(chat, '<b>Metas</b>\n\n' + m.rows.map(
       (x) => `${barra(x.pct)} <b>${x.nome}</b>\n     ${brl(x.acumulado)} de ${brl(x.valor_alvo)}` +
              (x.aporte_mensal_necessario ? ` · R$ ${brl(x.aporte_mensal_necessario)}/mês` : '')
-    ).join('\n'));
+    ).join('\n') + `\n\n${RODAPE}`);
   }
 
   if (r.comando === 'pendentes') {
