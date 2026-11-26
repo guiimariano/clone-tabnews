@@ -17,7 +17,8 @@
 // histórico inteiro a cada leitura.
 import { sincronizar } from '../../../../lib/financas/pluggy-sync.js';
 import { configurado } from '../../../../lib/financas/pluggy.js';
-import { previsaoCaixa, textoCaixa, precisaAvisarCaixa } from '../../../../lib/financas/dados.js';
+import { textoCaixa, precisaAvisarCaixa, agenda, avisoAgenda, tecladoBoletos } from '../../../../lib/financas/dados.js';
+import { q } from '../../../../lib/financas/pg.js';
 import { responder } from '../../../../lib/financas/telegram.js';
 
 export const config = { maxDuration: 300 };
@@ -44,17 +45,28 @@ export default async function handler(req, res) {
       : `${c.conta}: ${c.novas} novas, ${c.atualizadas} atualizadas, ${c.removidas} removidas`));
     console.log(`pluggy-sync ${execucao} ok em ${Date.now() - t0}ms · ${resumo.join(' · ')}`);
 
-    // Caixa (0031): avisa no grupo quando o próximo débito não tem saldo.
-    // Falha no aviso não derruba a sync, que já gravou tudo.
+    // Lembrete do dia (0032): contas que vencem, boleto atrasado, saldo que
+    // vai faltar no Santander ou na Caixa. Uma mensagem por dia no máximo
+    // (avisos_enviados), mesmo se o schedule disparar duas vezes. Falha no
+    // aviso não derruba a sync, que já gravou tudo.
     try {
       const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
-      const c = await previsaoCaixa(hoje);
-      if (precisaAvisarCaixa(c, hoje) && process.env.TELEGRAM_CHAT_ID) {
-        await responder(process.env.TELEGRAM_CHAT_ID, textoCaixa(c));
-        console.log(`pluggy-sync ${execucao}: aviso da Caixa enviado (falta ${c.falta})`);
+      const baixas = (await q('select public.conciliar_contas_a_pagar() as n')).rows[0].n;
+      if (baixas) console.log(`pluggy-sync ${execucao}: ${baixas} boleto(s) com baixa automática`);
+      const a = await agenda(hoje);
+      const aviso = avisoAgenda(a);
+      const texto = aviso?.texto ?? (precisaAvisarCaixa(a.caixa, hoje) ? textoCaixa(a.caixa) : null);
+      if (texto && process.env.TELEGRAM_CHAT_ID) {
+        const marca = await q(
+          `insert into public.avisos_enviados (chave) values ($1) on conflict do nothing returning chave`,
+          [`lembrete:${hoje}`]);
+        if (marca.rowCount) {
+          await responder(process.env.TELEGRAM_CHAT_ID, texto, tecladoBoletos(aviso?.boletos));
+          console.log(`pluggy-sync ${execucao}: lembrete enviado`);
+        }
       }
     } catch (e) {
-      console.error(`pluggy-sync ${execucao}: aviso da Caixa falhou:`, e.message);
+      console.error(`pluggy-sync ${execucao}: lembrete falhou:`, e.message);
     }
     return res.status(200).json({ ok: true, execucao, contas: resumo, descobertas: r.descobertas.length });
   } catch (e) {

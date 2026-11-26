@@ -3,7 +3,8 @@
 // Webhook do bot. Função serverless na Vercel.
 //
 // SÓ CONSULTA desde 25/11/2026: os gastos entram pela Pluggy (Open
-// Finance). O bot responde /resumo, /faturas, /saldo, /metas, classifica
+// Finance). O bot responde /resumo, /agenda, /faturas, /saldo, /metas, anota boletos
+// (/boleto, /paguei), classifica
 // pendentes (/classificar e botões) e registra APORTE em meta (#meta valor)
 // — aporte não é gasto, e o banco não sabe para qual meta foi o dinheiro.
 //
@@ -11,7 +12,9 @@
 // reentrega é duplicata. Devolver 200 evita a tentativa.
 import { q, brl, hojeSP, mesRefSP } from '../../../lib/financas/pg.js';
 import { parse } from '../../../lib/financas/parser.js';
-import { dashboard, previsaoCaixa, textoCaixa } from '../../../lib/financas/dados.js';
+import {
+  dashboard, previsaoCaixa, textoCaixa, agenda, textoAgenda, lerBoleto, tecladoBoletos,
+} from '../../../lib/financas/dados.js';
 import {
   responderA, responder, editar, confirmarBotao, tecladoCategorias, barra,
 } from '../../../lib/financas/telegram.js';
@@ -74,7 +77,7 @@ async function tratar(update) {
   const r = parse(msg.text, mapaAliases, mapaMetas);
 
   switch (r.tipo) {
-    case 'comando':   return comando(msg, r);
+    case 'comando':   return comando(msg, r, usuario);
     case 'aporte':    return aporte(msg, r, usuario);
     case 'lancamento':return avisoConsulta(msg, r);
     case 'erro':
@@ -128,8 +131,45 @@ async function aporte(msg, r, usuario) {
 }
 
 // ---------- comandos ----------
-async function comando(msg, r) {
+async function comando(msg, r, usuario) {
   const chat = msg.chat.id;
+
+  // agenda de contas a pagar (0032): faturas, fixas e boletos
+  if (['agenda', 'contas', 'pagar', 'vencimentos'].includes(r.comando)) {
+    const a = await agenda();
+    return responder(chat, textoAgenda(a), tecladoBoletos(a.itens.filter((i) => i.tipo === 'boleto')));
+  }
+
+  if (r.comando === 'boleto') {
+    if (!r.bruto) {
+      const b = await q(`select id, descricao, valor, vencimento::text as v from public.contas_a_pagar
+                          where pago_em is null order by vencimento, id limit 15`);
+      return responder(chat,
+        '<b>Boleto avulso</b>\n<code>/boleto IPTU 350,00 10/12</code>\n' +
+        'Eu lembro 3 dias antes, na véspera e no dia. Quando o pagamento aparecer no banco, dou baixa sozinho; ' +
+        'senão, use /paguei.\n\n' +
+        (b.rowCount
+          ? '<b>Em aberto</b>\n' + b.rows.map((x) =>
+              `#${x.id} ${esc(x.descricao)}: R$ ${brl(x.valor)} · ${x.v.slice(8, 10)}/${x.v.slice(5, 7)}`).join('\n')
+          : 'Nenhum boleto em aberto.'));
+    }
+    const b = lerBoleto(r.bruto);
+    if (b.erro) return responderA(chat, msg.message_id, `🤔 ${b.erro}\nExemplo: <code>/boleto IPTU 350,00 10/12</code>`);
+    const ins = await q(
+      `insert into public.contas_a_pagar (descricao, valor, vencimento, conta_id, criado_por)
+       values ($1, $2, $3, (select id from public.contas where slug = 'santander_cc'), $4) returning id`,
+      [b.descricao, b.valor, b.vencimento, usuario.id]);
+    return responderA(chat, msg.message_id,
+      `🧾 Anotado #${ins.rows[0].id}: <b>${esc(b.descricao)}</b>, R$ ${brl(b.valor)}, vence ` +
+      `${b.vencimento.slice(8, 10)}/${b.vencimento.slice(5, 7)}/${b.vencimento.slice(0, 4)}.\n` +
+      'Lembro 3 dias antes, na véspera e no dia.');
+  }
+
+  if (r.comando === 'paguei') {
+    const id = Number(r.args[0]);
+    if (!Number.isInteger(id)) return responderA(chat, msg.message_id, 'Use <code>/paguei 3</code> (o número do boleto em /boleto).');
+    return responderA(chat, msg.message_id, await darBaixa(id));
+  }
 
   if (r.comando === 'resumo') {
     const d = await dashboard();
@@ -229,6 +269,8 @@ async function comando(msg, r) {
     '<b>Como usar</b>\n\n' +
     'Os gastos entram sozinhos pela Pluggy. Aqui é para consultar:\n\n' +
     '/resumo — o mês até agora\n' +
+    '/agenda — contas a pagar nos próximos 30 dias\n' +
+    '/boleto IPTU 350,00 10/12 — anotar boleto · /paguei 3\n' +
     '/faturas — cartões em aberto e vencimento\n' +
     '/saldo · /saldo mercado — tetos do orçamento\n' +
     '/metas — progresso das metas\n' +
@@ -239,6 +281,12 @@ async function comando(msg, r) {
 
 // ---------- botão de categoria ----------
 async function tratarBotao(cb) {
+  const pg = /^pago:(\d+)$/.exec(cb.data ?? '');
+  if (pg) {
+    const t = await darBaixa(Number(pg[1]));
+    await confirmarBotao(cb.id, t.startsWith('✅') ? 'Baixa feita' : 'Já estava pago');
+    return responder(cb.message.chat.id, t);
+  }
   const m = /^cat:([0-9a-f-]+):(\d+)$/.exec(cb.data ?? '');
   if (!m) return confirmarBotao(cb.id, 'Botão inválido');
   const [, lancamentoId, categoriaId] = m;
@@ -258,6 +306,21 @@ async function tratarBotao(cb) {
   const saldo = await textoSaldo(Number(categoriaId));
   return editar(cb.message.chat.id, cb.message.message_id,
     `✅ <b>R$ ${brl(l.valor)}</b>${l.descricao ? ` · ${l.descricao}` : ''} → ${c.rows[0].nome}\n${saldo}`);
+}
+
+// ---------- baixa de boleto ----------
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+async function darBaixa(id) {
+  const u = await q(
+    `update public.contas_a_pagar set pago_em = (now() at time zone 'America/Sao_Paulo')::date
+      where id = $1 and pago_em is null returning descricao, valor`, [id]);
+  if (!u.rowCount) {
+    const x = await q('select descricao, pago_em::text as p from public.contas_a_pagar where id = $1', [id]);
+    return x.rowCount
+      ? `ℹ️ #${id} ${esc(x.rows[0].descricao)} já estava pago (${x.rows[0].p.slice(8, 10)}/${x.rows[0].p.slice(5, 7)}).`
+      : `Não achei o boleto #${id}.`;
+  }
+  return `✅ Baixa: #${id} ${esc(u.rows[0].descricao)}, R$ ${brl(u.rows[0].valor)}.`;
 }
 
 // ---------- saldo de uma categoria ----------
