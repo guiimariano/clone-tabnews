@@ -34,7 +34,13 @@ function Teto({ c, aoSalvar }) {
   );
 }
 
-export default function Orcamento({ ok, erro, d }) {
+// Chave pelo mês: na navegação entre meses o Next só troca as props, e o
+// estado copiado delas (categorias, valores digitados no teto) ficaria velho.
+export default function Orcamento(props) {
+  return <Tela key={props.d?.mes ?? '-'} {...props} />;
+}
+
+function Tela({ ok, erro, d }) {
   const [cats, setCats] = useState(d?.categorias ?? []);
   if (!ok) return <Portao erro={erro} />;
 

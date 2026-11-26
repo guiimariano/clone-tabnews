@@ -48,7 +48,14 @@ function csv(linhas, cats) {
   return '﻿' + [cab.join(';'), ...corpo].join('\r\n'); // BOM + ; para o Excel pt-BR abrir certo
 }
 
-export default function Transacoes({ ok, erro, linhas: inicial, cad, mes, periodo, filtroInicial }) {
+// Trocar de mês é navegação no cliente: o Next reaproveita o componente e
+// só troca as props, então o estado copiado delas (linhas, filtros, página)
+// ficaria com o mês anterior. A chave por período força uma planilha nova.
+export default function Transacoes(props) {
+  return <Planilha key={`${props.periodo}:${props.mes}:${JSON.stringify(props.filtroInicial ?? {})}`} {...props} />;
+}
+
+function Planilha({ ok, erro, linhas: inicial, cad, mes, periodo, filtroInicial }) {
   const [linhas, setLinhas] = useState(inicial ?? []);
   const [f, setF] = useState(filtroInicial ?? {});
   const [ordem, setOrdem] = useState({ campo: 'data_compra', dir: -1 });
