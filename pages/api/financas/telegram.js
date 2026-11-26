@@ -280,6 +280,12 @@ async function comando(msg, r, usuario) {
 
 // ---------- botão de categoria ----------
 async function tratarBotao(cb) {
+  // mesmo portão das mensagens: botão de outro chat não mexe em nada
+  const chatPermitido = String(process.env.TELEGRAM_CHAT_ID ?? '');
+  if (chatPermitido && String(cb.message?.chat?.id) !== chatPermitido) {
+    console.warn('botão de chat não autorizado:', cb.message?.chat?.id);
+    return confirmarBotao(cb.id, 'Chat não autorizado');
+  }
   const pg = /^pago:(\d+)$/.exec(cb.data ?? '');
   if (pg) {
     const t = await darBaixa(Number(pg[1]));

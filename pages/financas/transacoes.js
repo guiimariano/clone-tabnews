@@ -323,8 +323,8 @@ export async function getServerSideProps({ req, query }) {
     const mes = mesValido(query.mes) ?? atual;
     const periodo = query.periodo === '12m' ? '12m' : 'mes';
     // 12 meses de verdade: os 11 anteriores + o atual. Antes pegava todos os
-    // meses com dado, e o primeiro (nov/25) só tinha salário, sem o cartão,
-    // inflando a sobra em ~R$ 11 mil.
+    // meses com dado, e o primeiro, incompleto (só salário, sem o cartão),
+    // inflava a sobra.
     const menos11 = (() => { const [a, m] = atual.split('-').map(Number); const d = new Date(Date.UTC(a, m - 12, 1)); return d.toISOString().slice(0, 10); })();
     const de = periodo === '12m' ? menos11 : mes;
     const ate = periodo === '12m' ? atual : mes;
