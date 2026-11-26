@@ -207,7 +207,8 @@ export default function Dashboard({ ok, erro, d }) {
               </div>
               <p className={`nota ${d.caixa.transferir ? 'est-critico' : 'est-ok'}`} style={{ marginTop: 6 }}>
                 {d.caixa.transferir
-                  ? `⚠ Transfira R$ ${brl0(d.caixa.transferir)} antes de ${dataCurta(d.caixa.negativoEm)} para não entrar no cheque especial.`
+                  ? `⚠ Para não entrar no cheque especial, transfira ${d.caixa.etapas.map((e) =>
+                      `R$ ${brl0(e.valor)} até ${dataCurta(e.ate)} (${e.nome.replace(/ Caixa$/, '').toLowerCase()})`).join(' e ')}.`
                   : '✓ O saldo cobre os próximos débitos.'}
               </p>
             </div>

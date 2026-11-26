@@ -189,8 +189,8 @@ async function comando(msg, r, usuario) {
       `Resultado: <b>R$ ${brl(rec - desp)}</b>\n${ritmo}\n` +
       `<b>Maiores gastos</b>\n${top}\n\n` +
       `Faturas em aberto: R$ ${brl(aberto)} · /faturas` +
-      (d.caixa?.transferir ? `
-🏠 Caixa: faltam R$ ${brl(d.caixa.transferir)} até ${d.caixa.negativoEm.slice(8, 10)}/${d.caixa.negativoEm.slice(5, 7)} · /caixa` : '') +
+      (d.caixa?.etapas?.length ? `\n🏠 Caixa: transfira ` + d.caixa.etapas.map((e) =>
+        `R$ ${brl(e.valor)} até ${e.ate.slice(8, 10)}/${e.ate.slice(5, 7)}`).join(' e ') + ' · /caixa' : '') +
       (d.pendentes.n ? `\nSem categoria: ${d.pendentes.n} (R$ ${brl(d.pendentes.valor)}) · /classificar` : '') +
       `\n\n${PAINEL}`);
   }
