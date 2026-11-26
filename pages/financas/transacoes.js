@@ -8,7 +8,7 @@
 // regra para as próximas sincronizações da Pluggy.
 import { useMemo, useState } from 'react';
 import { autenticado } from '../../lib/financas/auth.js';
-import { transacoes, cadastros, mesesComDados, mesValido } from '../../lib/financas/dados.js';
+import { transacoes, cadastros, mesValido } from '../../lib/financas/dados.js';
 import { Layout, Portao, SeletorMes, brl, brl0, dataCurta, rotuloMes, mesLongo, NOME_GRUPO, padraoSugerido } from '../../components/financas/base.js';
 
 const POR_PAGINA = 250;
@@ -318,13 +318,16 @@ function Planilha({ ok, erro, linhas: inicial, cad, mes, periodo, filtroInicial 
 export async function getServerSideProps({ req, query }) {
   if (!process.env.FINANCAS_SENHA || !autenticado(req)) return { props: { ok: false, erro: null } };
   try {
-    const meses = await mesesComDados();
     const hoje = new Date();
     const atual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
     const mes = mesValido(query.mes) ?? atual;
     const periodo = query.periodo === '12m' ? '12m' : 'mes';
-    const de = periodo === '12m' ? `${meses.at(-1) ?? atual.slice(0, 7)}-01` : mes;
-    const ate = periodo === '12m' ? `${meses[0] ?? atual.slice(0, 7)}-01` : mes;
+    // 12 meses de verdade: os 11 anteriores + o atual. Antes pegava todos os
+    // meses com dado, e o primeiro (nov/25) só tinha salário, sem o cartão,
+    // inflando a sobra em ~R$ 11 mil.
+    const menos11 = (() => { const [a, m] = atual.split('-').map(Number); const d = new Date(Date.UTC(a, m - 12, 1)); return d.toISOString().slice(0, 10); })();
+    const de = periodo === '12m' ? menos11 : mes;
+    const ate = periodo === '12m' ? atual : mes;
     const [linhas, cad] = await Promise.all([transacoes({ de, ate }), cadastros()]);
     const filtroInicial = {};
     for (const k of ['categoria', 'conta', 'pessoa', 'tipo', 'grupo', 'q']) {
